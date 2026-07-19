@@ -1,0 +1,56 @@
+JEPA Consolidation Report
+Date: 2026-06-13
+
+Summary:
+- Goal: Consolidate JEPA into a single production application with a single canonical startup path (`main.py`) that launches the newest `jepa_site_manager` experience.
+
+Changes made:
+- Updated `main.py` (project root) to initialize DB and launch `jepa_site_manager.app.main()` as the single canonical entrypoint.
+- Deleted legacy and test-only launchers and helpers (see removed files list).
+- Implemented `Documents` UI and added `update_document()` to `jepa_site_manager/documents/document_service.py`.
+
+Files modified:
+- jepa_site_manager/documents/document_view.py — replaced placeholder with CRUD UI (144 lines)
+- jepa_site_manager/documents/document_service.py — added `update_document()` (136 lines)
+- main.py — canonical launcher (updated)
+
+Files removed (selected, test/temporary/legacy):
+- capture_issue_after_delete.py
+- capture_phase2b_screenshots.py
+- create_evidence_screenshots.py
+- raw_evidence_test.py
+- run_document_ui_test.py
+- run_issue_ui_delete_verify.py
+- run_issue_ui_direct_hub.py
+- run_issue_ui_direct_hub_v2.py
+- run_issue_ui_from_hub_test.py
+- run_issue_ui_from_hub_test_v2.py
+- run_issue_ui_from_hub_test_v3.py
+- run_issue_ui_test.py
+- issue_ui_delete_only.py
+- list_issue_buttons.py
+- show_issues_db.py
+- show_registration_code.py
+- show_role_choices.py
+- update_issue_manual.py
+- verify_modules.py
+- verify_modules_detailed.py
+- verify_all_modules.py
+- final_test_report.py
+- (nested legacy main deleted): jepa_auth_system/jepa_auth_system/jepa_auth_system/main.py
+
+Evidence collected (screenshots present in repo root):
+- Login screenshots: login_success_test_superadmin.png, login_success_test_admin.png, login_success_test_contractor.png
+- Site Manager hub & module screenshots: doc_ui_initial_*.png, doc_ui_after_create_*.png, doc_ui_after_edit_*.png, doc_ui_after_delete_*.png
+- Issues UI screenshots and before/after delete: issue_delete_verify_before_delete_*.png, issue_delete_verify_after_delete_*.png, issue_after_delete_ui.png
+
+Verification steps run:
+1. Launched `main.py` (canonical launcher) via venv Python — it initializes DB and invoked Site Manager app.
+2. Ran automated UI tests to open the hub, create/edit/delete Issues and Documents via UI; captured DB rows before/after and screenshots.
+
+Next steps (recommended):
+- Run manual smoke test locally: `python main.py` and perform login to confirm UI flow.
+- Audit remaining root files and nested directories for additional legacy copies; remove or archive as desired.
+- Verify role integration across registration/login/hub via unit tests.
+
+If you'd like, I will now (A) finish the full repo audit and classification file, (B) remove remaining legacy nested folders, and (C) produce the startup flow diagram and screenshots requested.

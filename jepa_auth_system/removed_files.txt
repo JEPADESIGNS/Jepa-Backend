@@ -1,0 +1,26 @@
+List of files removed during consolidation (test/dev artifacts)
+
+capture_issue_after_delete.py
+capture_phase2b_screenshots.py
+create_evidence_screenshots.py
+raw_evidence_test.py
+run_document_ui_test.py
+run_issue_ui_delete_verify.py
+run_issue_ui_direct_hub.py
+run_issue_ui_direct_hub_v2.py
+run_issue_ui_from_hub_test.py
+run_issue_ui_from_hub_test_v2.py
+run_issue_ui_from_hub_test_v3.py
+run_issue_ui_test.py
+issue_ui_delete_only.py
+list_issue_buttons.py
+show_issues_db.py
+show_registration_code.py
+show_role_choices.py
+update_issue_manual.py
+verify_modules.py
+verify_modules_detailed.py
+verify_all_modules.py
+final_test_report.py
+
+Note: Production modules under `jepa_site_manager/`, `auth/`, `database/`, `ui/`, and `dashboard/` were preserved.

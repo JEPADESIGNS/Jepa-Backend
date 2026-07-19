@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JEPA Site Manager — System Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --sand:      #F2EDE4;
+    --concrete:  #D6CFBF;
+    --iron:      #2C2C2C;
+    --steel:     #4A4A4A;
+    --site-orange: #E05C1A;
+    --site-yellow: #F0A500;
+    --blueprint:  #1A3A5C;
+    --blueprint-mid: #2A5A8C;
+    --blueprint-light: #4A8AC4;
+    --glass:     rgba(255,255,255,0.06);
+    --rule:      rgba(255,255,255,0.10);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--blueprint);
+    color: #E8EFF7;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Blueprint grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(74,138,196,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74,138,196,0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 2px solid var(--site-orange);
+    padding-bottom: 28px;
+    margin-bottom: 56px;
+  }
+  .header-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--site-orange);
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: #fff;
+  }
+  h1 span { color: var(--site-yellow); }
+  .header-sub {
+    margin-top: 12px;
+    font-size: 15px;
+    color: #8AADCC;
+    max-width: 560px;
+  }
+  .header-meta {
+    display: flex;
+    gap: 24px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .meta-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border: 1px solid rgba(74,138,196,0.4);
+    border-radius: 2px;
+    color: var(--blueprint-light);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--site-orange);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(74,138,196,0.3);
+  }
+
+  /* ── PHASE BANNER ── */
+  .phase-section { margin-bottom: 56px; }
+  .phase-header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .phase-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    padding: 3px 8px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .phase-tag.p1 { background: var(--site-orange); color: #fff; }
+  .phase-tag.p2 { background: var(--site-yellow); color: var(--iron); }
+  .phase-tag.p3 { background: var(--blueprint-light); color: #fff; }
+  .phase-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .phase-desc {
+    font-size: 13px;
+    color: #7A9AB8;
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── MODULE CARDS ── */
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .module-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(74,138,196,0.2);
+    border-radius: 4px;
+    padding: 20px 22px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .module-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--accent, var(--blueprint-light));
+  }
+  .module-card:hover {
+    border-color: rgba(74,138,196,0.5);
+    background: rgba(255,255,255,0.07);
+    transform: translateY(-2px);
+  }
+  .module-card.active {
+    border-color: var(--accent, var(--blueprint-light));
+    background: rgba(255,255,255,0.08);
+  }
+
+  .card-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--accent, var(--blueprint-light));
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .card-purpose {
+    font-size: 12px;
+    color: #7A9AB8;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    background: rgba(74,138,196,0.15);
+    color: var(--blueprint-light);
+    border: 1px solid rgba(74,138,196,0.2);
+  }
+  .tag.hw { background: rgba(224,92,26,0.12); color: #E8885A; border-color: rgba(224,92,26,0.2); }
+  .tag.role { background: rgba(240,165,0,0.12); color: #E8B84B; border-color: rgba(240,165,0,0.2); }
+
+  /* ── DETAIL PANEL ── */
+  .detail-panel {
+    display: none;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(74,138,196,0.2);
+  }
+  .module-card.active .detail-panel { display: block; }
+
+  .detail-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+  .detail-key {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--site-orange);
+    min-width: 80px;
+    letter-spacing: 0.06em;
+    padding-top: 1px;
+    text-transform: uppercase;
+  }
+  .detail-val {
+    font-size: 12px;
+    color: #AAC4DC;
+    line-height: 1.5;
+  }
+  .collab-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .collab-chip {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #C4D8EC;
+  }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow-section {
+    margin-top: 64px;
+    margin-bottom: 56px;
+  }
+  .flow-diagram {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(74,138,196,0.2);
+    border-radius: 4px;
+    padding: 36px 28px;
+    overflow-x: auto;
+  }
+  .flow-inner {
+    min-width: 560px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .flow-node {
+    padding: 8px 20px;
+    border-radius: 3px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-align: center;
+    min-width: 160px;
+  }
+  .flow-node.auth   { background: var(--site-orange); color: #fff; }
+  .flow-node.proj   { background: rgba(240,165,0,0.8); color: var(--iron); }
+  .flow-node.mid    { background: rgba(74,138,196,0.4); color: #fff; border: 1px solid rgba(74,138,196,0.5); }
+  .flow-node.cost   { background: rgba(74,138,196,0.6); color: #fff; }
+  .flow-node.analytics { background: var(--blueprint-light); color: #fff; }
+  .flow-node.leaf   { background: rgba(255,255,255,0.08); color: #C4D8EC; border: 1px solid rgba(255,255,255,0.12); }
+  .flow-node.ai     { background: linear-gradient(135deg,#2A5A8C,#1A3A5C); border: 1px solid var(--site-orange); color: #fff; }
+
+  .flow-arrow {
+    width: 1px;
+    height: 28px;
+    background: rgba(74,138,196,0.4);
+    position: relative;
+    margin: 0 auto;
+  }
+  .flow-arrow::after {
+    content: '▼';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    color: rgba(74,138,196,0.6);
+  }
+
+  .flow-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+  .flow-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .flow-hsep {
+    width: 60%;
+    height: 1px;
+    background: rgba(74,138,196,0.3);
+    margin: 0 auto;
+  }
+  .flow-bracket {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    width: 100%;
+  }
+  .flow-vert-line {
+    width: 1px;
+    background: rgba(74,138,196,0.3);
+  }
+  .flow-pair {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .flow-leaves {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* ── BUILD ROADMAP ── */
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 680px) { .roadmap-grid { grid-template-columns: 1fr; } }
+  .roadmap-col {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(74,138,196,0.2);
+    border-radius: 4px;
+    padding: 20px;
+    position: relative;
+  }
+  .roadmap-col::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 4px 4px 0 0;
+  }
+  .roadmap-col.p1::before { background: var(--site-orange); }
+  .roadmap-col.p2::before { background: var(--site-yellow); }
+  .roadmap-col.p3::before { background: var(--blueprint-light); }
+
+  .roadmap-phase {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .p1 .roadmap-phase { color: var(--site-orange); }
+  .p2 .roadmap-phase { color: var(--site-yellow); }
+  .p3 .roadmap-phase { color: var(--blueprint-light); }
+
+  .roadmap-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+  .roadmap-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(74,138,196,0.1);
+  }
+  .roadmap-item:last-child { border-bottom: none; }
+  .r-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: rgba(74,138,196,0.5);
+    min-width: 18px;
+    padding-top: 1px;
+  }
+  .r-name { font-size: 12px; color: #AAC4DC; }
+  .r-note {
+    font-size: 11px;
+    color: rgba(170,196,220,0.5);
+    font-style: italic;
+    margin-top: 2px;
+  }
+
+  /* ── USER ROLES TABLE ── */
+  .roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .role-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(74,138,196,0.2);
+    border-radius: 3px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .role-icon { font-size: 22px; margin-bottom: 6px; }
+  .role-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .role-access {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #7A9AB8;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(74,138,196,0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .footer-brand {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--site-orange);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+  }
+  .footer-note {
+    font-size: 11px;
+    color: rgba(138,173,204,0.5);
+  }
+
+  /* ── TOOLTIP for cards ── */
+  .expand-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: rgba(74,138,196,0.5);
+    margin-top: 10px;
+    transition: color 0.2s;
+  }
+  .module-card:hover .expand-hint { color: var(--blueprint-light); }
+  .module-card.active .expand-hint { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-eyebrow">System Architecture Document</div>
+    <h1>JEPA <span>Site Manager</span></h1>
+    <p class="header-sub">A modular construction site management platform built across three deployment phases — from sellable MVP to full AI-powered intelligence.</p>
+    <div class="header-meta">
+      <span class="meta-pill">10 Modules</span>
+      <span class="meta-pill">3 Build Phases</span>
+      <span class="meta-pill">6 User Roles</span>
+      <span class="meta-pill">Hardware Integration</span>
+    </div>
+  </header>
+
+  <!-- USER ROLES -->
+  <div class="section-label">User Roles</div>
+  <div class="roles-grid" style="margin-bottom:56px">
+    <div class="role-card">
+      <div class="role-icon">🔑</div>
+      <div class="role-name">Super Admin</div>
+      <div class="role-access">Full system access</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">⚙️</div>
+      <div class="role-name">Admin</div>
+      <div class="role-access">Organisation-wide</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">📋</div>
+      <div class="role-name">Project Manager</div>
+      <div class="role-access">Per-project scope</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">🦺</div>
+      <div class="role-name">Site Engineer</div>
+      <div class="role-access">Reports & tracking</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">📦</div>
+      <div class="role-name">Store Keeper</div>
+      <div class="role-access">Materials only</div>
+    </div>
+    <div class="role-card">
+      <div class="role-icon">👁️</div>
+      <div class="role-name">Client</div>
+      <div class="role-access">View-only portal</div>
+    </div>
+  </div>
+
+  <!-- PHASE 1 -->
+  <div class="phase-section">
+    <div class="phase-header">
+      <span class="phase-tag p1">Phase 1</span>
+      <span class="phase-title">Sellable MVP</span>
+      <span class="phase-desc">— Ship first —</span>
+    </div>
+    <div class="section-label">Core Modules</div>
+    <div class="module-grid">
+
+      <div class="module-card" style="--accent:#E05C1A" onclick="toggle(this)">
+        <div class="card-num">MODULE 01</div>
+        <div class="card-title">Authentication & User Management</div>
+        <div class="card-purpose">Foundation layer. Controls who can access every part of the system.</div>
+        <div class="card-tags">
+          <span class="tag role">Super Admin</span>
+          <span class="tag role">Admin</span>
+          <span class="tag role">PM</span>
+          <span class="tag role">Engineer</span>
+          <span class="tag role">Storekeeper</span>
+          <span class="tag role">Client</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Collaborates</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Every Module</span></div></div>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Note</span>
+            <span class="detail-val">All modules inherit authentication. No module operates outside this layer.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="module-card" style="--accent:#F0A500" onclick="toggle(this)">
+        <div class="card-num">MODULE 02</div>
+        <div class="card-title">Project Management</div>
+        <div class="card-purpose">Creates and manages the projects that every other module belongs to.</div>
+        <div class="card-tags">
+          <span class="tag">Project Name</span>
+          <span class="tag">Client</span>
+          <span class="tag">Budget</span>
+          <span class="tag">Timeline</span>
+          <span class="tag">Status</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Stores</span>
+            <span class="detail-val">Name, Client, Location, Budget, Start/End Date, Status</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Collaborates</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Daily Reports</span><span class="collab-chip">Materials</span><span class="collab-chip">Attendance</span><span class="collab-chip">Equipment</span><span class="collab-chip">Client Portal</span></div></div>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Key Rule</span>
+            <span class="detail-val">Everything in the system belongs to a project.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="module-card" style="--accent:#4A8AC4" onclick="toggle(this)">
+        <div class="card-num">MODULE 05</div>
+        <div class="card-title">Daily Site Reports</div>
+        <div class="card-purpose">Records daily activities on site. The beating heart of project monitoring.</div>
+        <div class="card-tags">
+          <span class="tag">Date</span>
+          <span class="tag">Weather</span>
+          <span class="tag">Activities</span>
+          <span class="tag">Photos</span>
+          <span class="tag">Issues</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Captures</span>
+            <span class="detail-val">Date, Weather, Activities, Workers Present, Issues Logged, Photo attachments</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Collaborates</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Projects</span><span class="collab-chip">Attendance</span><span class="collab-chip">Materials</span><span class="collab-chip">Clients</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="module-card" style="--accent:#4A8AC4" onclick="toggle(this)">
+        <div class="card-num">MODULE 04</div>
+        <div class="card-title">Material Management</div>
+        <div class="card-purpose">Controls site inventory from delivery to issue. Hardware-ready.</div>
+        <div class="card-tags">
+          <span class="tag hw">QR Labels</span>
+          <span class="tag hw">Barcode Scanner</span>
+          <span class="tag hw">RFID Tags</span>
+          <span class="tag">Received</span>
+          <span class="tag">Issued</span>
+          <span class="tag">Balance</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Tracks</span>
+            <span class="detail-val">Material Received, Material Issued, Running Balance</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Collaborates</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Reports</span><span class="collab-chip">Analytics</span><span class="collab-chip">BOQ</span><span class="collab-chip">Cost Monitoring</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="module-card" style="--accent:#4A8AC4" onclick="toggle(this)">
+        <div class="card-num">PDF</div>
+        <div class="card-title">PDF Report Export</div>
+        <div class="card-purpose">Generates printable, shareable reports from site data. Essential for contractors.</div>
+        <div class="card-tags">
+          <span class="tag">Daily Reports</span>
+          <span class="tag">Material Logs</span>
+          <span class="tag">Progress Reports</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Outputs</span>
+            <span class="detail-val">Branded PDF reports for clients, management, and site records</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase-section">
+    <div class="phase-header">
+      <span class="phase-tag p2">Phase 2</span>
+      <span class="phase-title">Operations Layer</span>
+      <span class="phase-desc">— Add intelligence —</span>
+    </div>
+    <div class="section-label">Operational Modules</div>
+    <div class="module-grid">
+
+      <div class="module-card" style="--accent:#F0A500" onclick="toggle(this)">
+        <div class="card-num">MODULE 03</div>
+        <div class="card-title">Workforce & Attendance</div>
+        <div class="card-purpose">Tracks workers, hours, wages, and presence using hardware integrations.</div>
+        <div class="card-tags">
+          <span class="tag hw">RFID Cards</span>
+          <span class="tag hw">Fingerprint Scanner</span>
+          <span class="tag hw">QR Codes</span>
+          <span class="tag">Hours Worked</span>
+          <span class="tag">Wages</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Stores</span>
+            <span class="detail-val">Worker Name, Role, Attendance Log, Hours Worked, Wage Rate</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Collaborates</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Payroll</span><span class="collab-chip">Reports</span><span class="collab-chip">Analytics</span></div></div>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Data Flow</span>
+            <span class="detail-val">Attendance data feeds both reports and payroll calculations.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="module-card" style="--accent:#F0A500" onclick="toggle(this)">
+        <div class="card-num">MODULE 07</div>
+        <div class="card-title">BOQ & Cost Monitoring</div>
+        <div class="card-purpose">Compares planned vs actual expenditure. Where contractors save money.</div>
+        <div class="card-tags">
+          <span class="tag">Planned Cost</span>
+          <span class="tag">Actual Cost</span>
+          <span class="tag">Variance</span>
+          <span class="tag">Profitability</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Inputs From</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Materials</span><span class="collab-chip">Equipment</span><span class="collab-chip">Labour</span></div></div>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Collaborates</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Materials</span><span class="collab-chip">Attendance</span><span class="collab-chip">Equipment</span><span class="collab-chip">Analytics</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="module-card" style="--accent:#F0A500" onclick="toggle(this)">
+        <div class="card-num">MODULE 09</div>
+        <div class="card-title">Analytics</div>
+        <div class="card-purpose">Turns all platform data into decisions. The intelligence layer.</div>
+        <div class="card-tags">
+          <span class="tag">Progress</span>
+          <span class="tag">Labour Costs</span>
+          <span class="tag">Consumption</span>
+          <span class="tag">Profitability</span>
+          <span class="tag">Delays</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Receives From</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Projects</span><span class="collab-chip">Attendance</span><span class="collab-chip">Materials</span><span class="collab-chip">Equipment</span><span class="collab-chip">BOQ</span><span class="collab-chip">Reports</span></div></div>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Outputs</span>
+            <span class="detail-val">Project Progress, Labour Costs, Material Consumption, Profitability, Delay Analysis</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 3 -->
+  <div class="phase-section">
+    <div class="phase-header">
+      <span class="phase-tag p3">Phase 3</span>
+      <span class="phase-title">Advanced Capabilities</span>
+      <span class="phase-desc">— Complete the platform —</span>
+    </div>
+    <div class="section-label">Advanced Modules</div>
+    <div class="module-grid">
+
+      <div class="module-card" style="--accent:#4A8AC4" onclick="toggle(this)">
+        <div class="card-num">MODULE 08</div>
+        <div class="card-title">Client Portal</div>
+        <div class="card-purpose">Gives clients a live, read-only window into their project. No editing rights.</div>
+        <div class="card-tags">
+          <span class="tag">Progress</span>
+          <span class="tag">Photos</span>
+          <span class="tag">Reports</span>
+          <span class="tag">Milestones</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Client Sees</span>
+            <span class="detail-val">Progress updates, Photo gallery, Reports, Milestone tracking</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Collaborates</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Projects</span><span class="collab-chip">Reports</span><span class="collab-chip">Analytics</span></div></div>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Access</span>
+            <span class="detail-val">View only. No editing rights.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="module-card" style="--accent:#4A8AC4" onclick="toggle(this)">
+        <div class="card-num">MODULE 06</div>
+        <div class="card-title">Equipment Management</div>
+        <div class="card-purpose">Tracks machinery location, fuel, maintenance, and usage hours.</div>
+        <div class="card-tags">
+          <span class="tag hw">GPS Tracker</span>
+          <span class="tag hw">Fuel Sensors</span>
+          <span class="tag">Location</span>
+          <span class="tag">Maintenance</span>
+          <span class="tag">Usage Hours</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Tracks</span>
+            <span class="detail-val">Equipment ID, Live Location, Fuel Consumption, Maintenance Schedule, Usage Hours</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Collaborates</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Reports</span><span class="collab-chip">Analytics</span><span class="collab-chip">Costs</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="module-card" style="--accent:#E05C1A" onclick="toggle(this)">
+        <div class="card-num">MODULE 10</div>
+        <div class="card-title">AI Assistant</div>
+        <div class="card-purpose">Sits on top of every module. Reads everything, writes what matters.</div>
+        <div class="card-tags">
+          <span class="tag">Daily Reports</span>
+          <span class="tag">Weekly Summaries</span>
+          <span class="tag">Client Updates</span>
+          <span class="tag">Meeting Minutes</span>
+        </div>
+        <div class="expand-hint">↓ tap to expand</div>
+        <div class="detail-panel">
+          <div class="detail-row">
+            <span class="detail-key">Reads From</span>
+            <div class="detail-val"><div class="collab-list"><span class="collab-chip">Reports</span><span class="collab-chip">Projects</span><span class="collab-chip">Materials</span><span class="collab-chip">Attendance</span><span class="collab-chip">Analytics</span></div></div>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Generates</span>
+            <span class="detail-val">Daily Reports, Weekly Summaries, Client Updates, Meeting Minutes, Project Summaries</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Position</span>
+            <span class="detail-val">Cross-cutting. Works across all modules simultaneously.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- COLLABORATION FLOW DIAGRAM -->
+  <div class="flow-section">
+    <div class="section-label">Collaboration Flow</div>
+    <div class="flow-diagram">
+      <div class="flow-inner">
+
+        <div class="flow-node auth">Authentication</div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node proj">Project Management</div>
+        <div class="flow-arrow"></div>
+
+        <!-- Four-branch spread -->
+        <div style="display:flex; align-items:flex-start; justify-content:center; gap:12px; width:100%;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1">
+            <div style="width:1px;height:20px;background:rgba(74,138,196,0.3)"></div>
+            <div class="flow-node mid">Attendance</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1">
+            <div style="width:1px;height:20px;background:rgba(74,138,196,0.3)"></div>
+            <div class="flow-node mid">Materials</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1">
+            <div style="width:1px;height:20px;background:rgba(74,138,196,0.3)"></div>
+            <div class="flow-node mid">Equipment</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0;flex:1">
+            <div style="width:1px;height:20px;background:rgba(74,138,196,0.3)"></div>
+            <div class="flow-node mid">Reports</div>
+          </div>
+        </div>
+
+        <div class="flow-arrow"></div>
+        <div class="flow-node cost">BOQ &amp; Cost Monitoring</div>
+        <div class="flow-arrow"></div>
+        <div class="flow-node analytics">Analytics</div>
+        <div class="flow-arrow"></div>
+
+        <div style="display:flex;align-items:flex-start;justify-content:center;gap:40px;width:100%">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+            <div style="width:1px;height:20px;background:rgba(74,138,196,0.3)"></div>
+            <div class="flow-node leaf">Client Portal</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+            <div style="width:1px;height:20px;background:rgba(74,138,196,0.3)"></div>
+            <div class="flow-node ai">AI Assistant ✦</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- BUILD ROADMAP -->
+  <div>
+    <div class="section-label">Build Roadmap</div>
+    <div class="roadmap-grid">
+
+      <div class="roadmap-col p1">
+        <div class="roadmap-phase">Phase 1</div>
+        <div class="roadmap-subtitle">Sellable MVP</div>
+        <div class="roadmap-item">
+          <span class="r-num">01</span>
+          <div>
+            <div class="r-name">Authentication</div>
+            <div class="r-note">Foundation for everything</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <span class="r-num">02</span>
+          <div>
+            <div class="r-name">Project Management</div>
+            <div class="r-note">Context for all data</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <span class="r-num">03</span>
+          <div>
+            <div class="r-name">Daily Reports</div>
+            <div class="r-note">Core deliverable</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <span class="r-num">04</span>
+          <div>
+            <div class="r-name">Material Tracking</div>
+            <div class="r-note">High contractor value</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <span class="r-num">05</span>
+          <div>
+            <div class="r-name">PDF Reports</div>
+            <div class="r-note">Makes it demonstrable</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="roadmap-col p2">
+        <div class="roadmap-phase">Phase 2</div>
+        <div class="roadmap-subtitle">Operations Layer</div>
+        <div class="roadmap-item">
+          <span class="r-num">06</span>
+          <div>
+            <div class="r-name">Attendance + RFID</div>
+            <div class="r-note">Hardware integration</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <span class="r-num">07</span>
+          <div>
+            <div class="r-name">BOQ & Cost Monitoring</div>
+            <div class="r-note">Financial control</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <span class="r-num">08</span>
+          <div>
+            <div class="r-name">Analytics</div>
+            <div class="r-note">Data into decisions</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="roadmap-col p3">
+        <div class="roadmap-phase">Phase 3</div>
+        <div class="roadmap-subtitle">Advanced Capabilities</div>
+        <div class="roadmap-item">
+          <span class="r-num">09</span>
+          <div>
+            <div class="r-name">Client Portal</div>
+            <div class="r-note">Read-only client access</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <span class="r-num">10</span>
+          <div>
+            <div class="r-name">Equipment Tracking</div>
+            <div class="r-note">GPS + fuel sensors</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <span class="r-num">11</span>
+          <div>
+            <div class="r-name">AI Assistant</div>
+            <div class="r-note">Cross-module intelligence</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-brand">JEPA SITE MANAGER</span>
+    <span class="footer-note">System Architecture · 10 Modules · 3 Phases</span>
+  </footer>
+
+</div>
+
+<script>
+  function toggle(card) {
+    const isActive = card.classList.contains('active');
+    // close all
+    document.querySelectorAll('.module-card.active').forEach(c => c.classList.remove('active'));
+    // open this one if it wasn't active
+    if (!isActive) card.classList.add('active');
+  }
+</script>
+</body>
+</html>

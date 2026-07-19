@@ -1,0 +1,17 @@
+Final project structure (post-consolidation)
+
+root/
+├── main.py
+├── auth/
+├── dashboard/
+├── database/
+├── ui/
+├── jepa_site_manager/
+├── tests/
+├── assets/
+├── data/
+├── scripts/  (optional utilities)
+├── requirements.txt
+└── legacy_archive/  (recommended — to be created when archiving)
+
+Note: Many temporary verification scripts were removed and are listed in `removed_files.txt`. The nested duplicate `jepa_auth_system/` folder remains and is recommended to be archived.

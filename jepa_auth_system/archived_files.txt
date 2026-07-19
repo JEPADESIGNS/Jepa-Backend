@@ -1,0 +1,16 @@
+Archived items (moved to `legacy_archive`)
+
+The following items were moved into `legacy_archive/` to preserve history while cleaning the top-level workspace:
+
+- legacy_archive/jepa_auth_system/  (nested duplicate project directory)
+- legacy_archive/build/
+- legacy_archive/dist/
+- legacy_archive/scripts/
+- legacy_archive/create_all_roles_visual.py
+- legacy_archive/create_role_dashboards.py
+- legacy_archive/show_dropdown_screenshot.py
+- legacy_archive/module_verification_matrix.txt
+- legacy_archive/module_verification_final.txt
+- legacy_archive/evidence/  (screenshots and UI verification images)
+
+If you'd like any of these restored to the top-level workspace, I can move them back or produce an archive zip.
